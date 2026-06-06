@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 720">
+  <rect width="720" height="720" fill="#f3eadc"/>
+  <path d="M104 137c133-61 304-60 514 2 38 156 19 307-50 456-157 55-307 51-453-13-48-147-52-295-11-445Z" fill="#fff7e8" stroke="#c9a95f" stroke-width="8"/>
+  <path d="M308 158h104v66H308z" fill="#4e7867"/>
+  <path d="M286 220h148l34 319c3 30-20 56-50 56H302c-30 0-53-26-50-56l34-319Z" fill="#8bbca9" stroke="#396858" stroke-width="9"/>
+  <path d="M292 328h136v141H292z" fill="#fff7e8" stroke="#396858" stroke-width="7"/>
+  <text x="360" y="383" text-anchor="middle" font-family="Georgia, serif" font-size="28" fill="#396858">Flores</text>
+  <text x="360" y="419" text-anchor="middle" font-family="Georgia, serif" font-size="25" fill="#9c6546">Blancas</text>
+  <path d="M270 136c-30-42 19-70 34-25m146 7c23-42 75-8 41 30" fill="none" stroke="#d98a70" stroke-width="10" stroke-linecap="round"/>
+  <circle cx="190" cy="290" r="22" fill="#e6b3a3"/>
+  <circle cx="529" cy="300" r="26" fill="#eed07e"/>
+  <path d="M145 511c50-37 102-39 156-6-50 36-102 39-156 6ZM437 170c49-35 94-34 136 3-48 33-94 32-136-3Z" fill="#8aa874"/>
+</svg>

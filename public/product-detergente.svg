@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 720">
+  <rect width="720" height="720" fill="#f4ecdc"/>
+  <path d="M105 126c148-54 319-55 513 4 30 159 14 312-48 459-141 60-291 58-450-5-55-145-60-298-15-458Z" fill="#fff8e9" stroke="#d0ad65" stroke-width="8"/>
+  <path d="M281 183h151v80c0 24-20 44-44 44h-63c-24 0-44-20-44-44v-80Z" fill="#e6a65f" stroke="#9a6735" stroke-width="8"/>
+  <path d="M255 286h204c28 0 52 22 55 50l25 198c4 34-23 64-57 64H232c-34 0-61-30-57-64l25-198c3-28 27-50 55-50Z" fill="#f2d49a" stroke="#9a6735" stroke-width="9"/>
+  <path d="M242 376h230v118H242z" fill="#fff8e9" stroke="#9a6735" stroke-width="7"/>
+  <text x="357" y="429" text-anchor="middle" font-family="Georgia, serif" font-size="30" fill="#4d775f">Citrico</text>
+  <circle cx="471" cy="504" r="40" fill="#e7a86e"/>
+  <circle cx="494" cy="492" r="10" fill="#fff2cb"/>
+  <path d="M138 243c45-36 91-38 139-4-46 34-91 35-139 4ZM420 170c47-30 92-27 136 9-47 30-92 27-136-9Z" fill="#86a873"/>
+</svg>

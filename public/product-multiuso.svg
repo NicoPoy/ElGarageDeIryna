@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 720">
+  <rect width="720" height="720" fill="#f4ecdc"/>
+  <path d="M104 138c145-65 316-63 513 7 32 146 16 295-48 447-155 55-306 50-454-14-49-148-52-295-11-440Z" fill="#fff8eb" stroke="#d0ad65" stroke-width="8"/>
+  <path d="M317 143h95l-35 97h-60z" fill="#7aa98d" stroke="#3f6c54" stroke-width="8"/>
+  <path d="M278 238h172l42 313c4 30-19 56-49 56H285c-30 0-53-26-49-56l42-313Z" fill="#9fbea3" stroke="#557b65" stroke-width="9"/>
+  <path d="M287 354h154v120H287z" fill="#fff8eb" stroke="#557b65" stroke-width="7"/>
+  <text x="364" y="405" text-anchor="middle" font-family="Georgia, serif" font-size="29" fill="#3f6c54">Lavanda</text>
+  <path d="M150 502c55-35 108-34 159 2-55 34-108 33-159-2ZM432 265c51-36 101-35 150 3-52 34-102 33-150-3Z" fill="#86a873"/>
+  <circle cx="180" cy="252" r="24" fill="#e9d4a9"/>
+  <circle cx="526" cy="506" r="32" fill="#8bbca9"/>
+</svg>

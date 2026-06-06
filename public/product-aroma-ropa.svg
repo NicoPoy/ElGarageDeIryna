@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 720">
+  <rect width="720" height="720" fill="#f7eedf"/>
+  <path d="M106 122c126-56 305-57 505 4 30 156 11 319-50 486-148 38-298 31-449-17-49-161-54-318-6-473Z" fill="#fff7e8" stroke="#d8bd83" stroke-width="8"/>
+  <path d="M148 153c88 32 119-34 199 0s137-34 229 0" fill="none" stroke="#88a678" stroke-width="10" stroke-linecap="round"/>
+  <rect x="260" y="210" width="190" height="338" rx="38" fill="#eecb91" stroke="#a86f37" stroke-width="9"/>
+  <rect x="292" y="154" width="126" height="82" rx="22" fill="#89a97b" stroke="#496c50" stroke-width="8"/>
+  <rect x="284" y="308" width="142" height="130" rx="18" fill="#fff7e8" stroke="#a86f37" stroke-width="7"/>
+  <text x="355" y="363" text-anchor="middle" font-family="Georgia, serif" font-size="31" fill="#496c50">Brisa</text>
+  <text x="355" y="400" text-anchor="middle" font-family="Georgia, serif" font-size="25" fill="#a86f37">de Limon</text>
+  <circle cx="172" cy="506" r="36" fill="#e7a86e"/>
+  <circle cx="536" cy="241" r="27" fill="#d98a70"/>
+  <path d="M171 444c42-39 92-47 147-24-39 42-88 49-147 24ZM409 522c50-34 101-35 153-2-48 36-99 37-153 2Z" fill="#88a678"/>
+</svg>

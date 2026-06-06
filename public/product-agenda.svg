@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 720">
+  <rect width="720" height="720" fill="#f3eadc"/>
+  <path d="M105 135c140-59 310-60 510 4 34 151 15 303-57 456-151 53-300 49-447-11-50-150-52-300-6-449Z" fill="#fff8ea" stroke="#cfac65" stroke-width="8"/>
+  <rect x="232" y="176" width="261" height="371" rx="28" fill="#7aa98d" stroke="#3f6c54" stroke-width="9"/>
+  <rect x="270" y="215" width="184" height="288" rx="16" fill="#fff8ea" stroke="#3f6c54" stroke-width="7"/>
+  <path d="M232 221h-42m42 68h-42m42 68h-42m42 68h-42m42 68h-42" stroke="#9a6841" stroke-width="12" stroke-linecap="round"/>
+  <text x="362" y="344" text-anchor="middle" font-family="Georgia, serif" font-size="34" fill="#557b65">Agenda</text>
+  <text x="362" y="388" text-anchor="middle" font-family="Georgia, serif" font-size="27" fill="#9a6841">Floral</text>
+  <circle cx="521" cy="219" r="27" fill="#d98a70"/>
+  <path d="M124 524c55-36 107-36 157 1-53 33-105 33-157-1ZM430 543c51-33 100-31 148 5-51 31-100 30-148-5Z" fill="#86a873"/>
+</svg>
