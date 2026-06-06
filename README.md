@@ -1,15 +1,14 @@
 # El Garage de Iryna
 
-Tienda online hecha con React y Vite. Por ahora trabaja sin base de datos externa: usa productos, categorias, usuarios y pedidos precargados en el frontend, con persistencia simple en `localStorage` para probar el flujo.
+Tienda online hecha con React, Vite y Turso/libSQL. Si Turso no esta configurado, la app conserva un fallback local para desarrollo.
 
 ## Requisitos
 
 - Node.js 18 o superior
 - npm
+- Cuenta de Turso
 
 ## Instalacion
-
-Desde la raiz del proyecto:
 
 ```bash
 npm install
@@ -17,11 +16,21 @@ npm install
 
 ## Variables de entorno
 
-La unica variable opcional actual es el link de Mercado Pago:
-
 ```env
 VITE_MERCADO_PAGO_PAYMENT_LINK=https://link.mercadopago.com.ar/tu-link-de-pago
+TURSO_DATABASE_URL=libsql://tu-db-tu-org.turso.io
+TURSO_AUTH_TOKEN=tu_token_de_turso
 ```
+
+## Base de datos Turso
+
+Crear la base en Turso y ejecutar:
+
+```bash
+turso db shell NOMBRE_DE_TU_DB < db/turso_schema.sql
+```
+
+Ese SQL crea tablas, indices, triggers, categorias base y usuarios de prueba. No carga productos.
 
 ## Usuarios de prueba
 
@@ -39,30 +48,32 @@ Email: cliente@elgaragedeiryna.com
 Contrasena: Cliente123
 ```
 
-## Levantar en desarrollo
+## Desarrollo
 
 ```bash
 npm run dev
 ```
 
-Vite va a mostrar una URL local, normalmente:
+Vite sirve el frontend en:
 
 ```text
 http://localhost:5173
 ```
 
-## Build de produccion
+Para probar tambien los endpoints `/api` en local, usar Vercel Dev o desplegar en Vercel con `TURSO_DATABASE_URL` y `TURSO_AUTH_TOKEN`.
+
+## Build
 
 ```bash
 npm run build
 ```
 
-## Datos locales
+## Modelo
 
-Los datos de ejemplo estan en:
+El esquema esta en:
 
 ```text
-src/data/products.js
+db/turso_schema.sql
 ```
 
-Ahi se cargan productos de limpieza, aromas, jabones, papeleria, categorias y usuarios demo.
+Las imagenes de productos se guardan como URL en `product_images`. Para carga real de imagenes conviene usar storage aparte, por ejemplo Cloudflare R2, Cloudinary o Uploadcare, y guardar solo la URL en Turso.

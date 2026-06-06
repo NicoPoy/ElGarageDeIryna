@@ -1,6 +1,6 @@
 # Deploy
 
-El proyecto esta preparado para Vercel como app Vite.
+El proyecto esta preparado para Vercel como app Vite con endpoints `/api` para Turso/libSQL.
 
 ## Configuracion
 
@@ -9,12 +9,18 @@ El proyecto esta preparado para Vercel como app Vite.
 - Output Directory: `dist`
 - Install Command: `npm install`
 
-## Variables
-
-Opcional:
+## Variables en Vercel
 
 ```env
+TURSO_DATABASE_URL=libsql://tu-db-tu-org.turso.io
+TURSO_AUTH_TOKEN=tu_token_de_turso
 VITE_MERCADO_PAGO_PAYMENT_LINK=https://link.mercadopago.com.ar/tu-link-de-pago
 ```
 
-Actualmente la app no usa Supabase ni otra base de datos externa. Los datos demo viven en el frontend y se guardan localmente en el navegador.
+## Base de datos
+
+Antes del deploy, ejecutar:
+
+```bash
+turso db shell NOMBRE_DE_TU_DB < db/turso_schema.sql
+```

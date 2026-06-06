@@ -19,6 +19,7 @@ import {
   INITIAL_PRODUCTS,
   MOCK_USERS
 } from './data/products';
+import { api } from './lib/api';
 import { downloadCsv } from './utils/csv';
 import { normalizeBuenosAiresWhatsApp } from './utils/contact';
 
@@ -234,6 +235,7 @@ function App() {
   const [editingProduct, setEditingProduct] = useState(null);
   const [ordersStatus, setOrdersStatus] = useState('');
   const [isLoadingOrders, setIsLoadingOrders] = useState(false);
+  const [isApiConnected, setIsApiConnected] = useState(false);
   const [confirmDialog, setConfirmDialog] = useState(null);
   const confirmResolver = useRef(null);
 
@@ -253,6 +255,26 @@ function App() {
   const isClient = userRoles.includes('cliente');
   const isAdmin = userRoles.includes('admin');
   const displayName = profile?.nombre || session?.user?.user_metadata?.nombre || 'usuario';
+
+  const applyCatalogData = ({ categories: nextCategories, products: nextProducts }) => {
+    if (nextCategories) setCatalogCategories(nextCategories);
+    if (nextProducts) setCatalogProducts(nextProducts);
+  };
+
+  const refreshCatalog = async () => {
+    const data = await api.getCatalog();
+    applyCatalogData(data);
+    setIsApiConnected(true);
+    setProductsStatus('');
+    return data;
+  };
+
+  const refreshOrders = async () => {
+    const data = await api.getOrders();
+    setOrders(data.orders || []);
+    setIsApiConnected(true);
+    return data.orders || [];
+  };
 
   useEffect(() => saveStoredCartItems(cartItems), [cartItems]);
   useEffect(() => writeStoredValue(PRODUCTS_STORAGE_KEY, catalogProducts), [catalogProducts]);
@@ -275,6 +297,13 @@ function App() {
       }
     }
     setProductsStatus('');
+  }, []);
+
+  useEffect(() => {
+    refreshCatalog().catch(() => {
+      setIsApiConnected(false);
+      setProductsStatus('Usando datos locales hasta configurar Turso.');
+    });
   }, []);
 
   const activeProducts = useMemo(
@@ -367,6 +396,19 @@ function App() {
 
   const handleLogin = async ({ email, password }) => {
     const normalizedEmail = email.trim().toLowerCase();
+
+    try {
+      const data = await api.login({ email: normalizedEmail, password });
+      setIsApiConnected(true);
+      setSession(buildSession(data.user));
+      setProfile(data.user);
+      setUserRoles(data.user.roles || []);
+      refreshOrders().catch(() => {});
+      return;
+    } catch (error) {
+      if (isApiConnected) throw error;
+    }
+
     const user = users.find(
       (currentUser) =>
         currentUser.email.toLowerCase() === normalizedEmail && currentUser.password === password
@@ -392,6 +434,22 @@ function App() {
     }
     if (users.some((user) => user.email.toLowerCase() === normalizedEmail)) {
       throw new Error('Ese email ya esta registrado. Inicia sesion o usa otro correo.');
+    }
+
+    try {
+      const data = await api.register({
+        ...form,
+        email: normalizedEmail,
+        whatsapp: normalizedWhatsApp.value,
+        dni: dniDigits
+      });
+      setIsApiConnected(true);
+      setSession(buildSession(data.user));
+      setProfile(data.user);
+      setUserRoles(data.user.roles || []);
+      return;
+    } catch (error) {
+      if (isApiConnected) throw error;
     }
 
     const nextUser = {
@@ -467,6 +525,25 @@ function App() {
 
     if (!confirmed) return false;
 
+    if (isApiConnected) {
+      try {
+        const data = await api.createProduct({
+          name: product.name.trim(),
+          categoryId: selectedCategory.id,
+          price: Number(product.price),
+          stock: Number(product.stock || 0),
+          imageUrls: [],
+          variants
+        });
+        applyCatalogData(data);
+        setAdminMessage('Producto cargado correctamente en Turso.');
+        return true;
+      } catch (error) {
+        setAdminMessage(`No se pudo guardar en Turso: ${error.message}`);
+        return false;
+      }
+    }
+
     const imageUrls = createLocalImageUrls(product.photoFiles);
     const images = imageUrls.length ? imageUrls : [DEFAULT_PRODUCT_IMAGE];
     const nextProduct = {
@@ -527,6 +604,30 @@ function App() {
 
     if (!confirmed) return false;
 
+    if (isApiConnected) {
+      try {
+        const data = await api.updateProduct(product.id, {
+          name: product.name.trim(),
+          categoryId: selectedCategory.id,
+          price: Number(product.price),
+          stock: Number(product.stock || 0),
+          imageUrls: product.currentImageUrls?.length
+            ? product.currentImageUrls
+            : product.currentImageUrl
+              ? [product.currentImageUrl]
+              : [],
+          variants
+        });
+        applyCatalogData(data);
+        setEditingProduct(null);
+        setAdminMessage('Producto modificado correctamente en Turso.');
+        return true;
+      } catch (error) {
+        setAdminMessage(`No se pudo modificar en Turso: ${error.message}`);
+        return false;
+      }
+    }
+
     const uploadedImages = createLocalImageUrls(product.photoFiles);
     const preservedImages = product.currentImageUrls?.length
       ? product.currentImageUrls
@@ -579,6 +680,18 @@ function App() {
 
     if (!confirmed) return;
 
+    if (isApiConnected) {
+      try {
+        const data = await api.deleteProduct(product.id);
+        applyCatalogData(data);
+        setAdminMessage('Producto eliminado correctamente en Turso.');
+        return;
+      } catch (error) {
+        setAdminMessage(`No se pudo eliminar en Turso: ${error.message}`);
+        return;
+      }
+    }
+
     setCatalogProducts((currentProducts) =>
       currentProducts.filter((currentProduct) => currentProduct.id !== product.id)
     );
@@ -605,6 +718,18 @@ function App() {
     });
 
     if (!confirmed) return false;
+
+    if (isApiConnected) {
+      try {
+        const data = await api.createCategory({ name: cleanName });
+        applyCatalogData(data);
+        setAdminMessage('Categoria creada correctamente en Turso.');
+        return true;
+      } catch (error) {
+        setAdminMessage(`No se pudo crear la categoria en Turso: ${error.message}`);
+        return false;
+      }
+    }
 
     setCatalogCategories((currentCategories) =>
       [
@@ -644,6 +769,19 @@ function App() {
 
     if (!confirmed) return false;
 
+    if (isApiConnected) {
+      try {
+        const data = await api.updateCategory(category.id, { name: cleanName });
+        applyCatalogData(data);
+        if (activeCategory === category.name) setActiveCategory(cleanName);
+        setAdminMessage('Categoria modificada correctamente en Turso.');
+        return true;
+      } catch (error) {
+        setAdminMessage(`No se pudo modificar la categoria en Turso: ${error.message}`);
+        return false;
+      }
+    }
+
     setCatalogCategories((currentCategories) =>
       currentCategories
         .map((currentCategory) =>
@@ -673,6 +811,21 @@ function App() {
     });
 
     if (!confirmed) return;
+
+    if (isApiConnected) {
+      try {
+        const data = await api.toggleCategory(category.id, { active: nextActive });
+        applyCatalogData(data);
+        if (!nextActive && activeCategory === category.name) setActiveCategory('Todos');
+        setAdminMessage(
+          nextActive ? 'Categoria activada correctamente en Turso.' : 'Categoria desactivada correctamente en Turso.'
+        );
+        return;
+      } catch (error) {
+        setAdminMessage(`No se pudo modificar la categoria en Turso: ${error.message}`);
+        return;
+      }
+    }
 
     setCatalogCategories((currentCategories) =>
       currentCategories.map((currentCategory) =>
@@ -826,6 +979,34 @@ function App() {
     }
 
     setIsSubmittingOrder(true);
+
+    if (isApiConnected) {
+      try {
+        const data = await api.createOrder({
+          userId: session.user.id,
+          paymentMethod,
+          customer: {
+            name: profile?.nombre || 'Cliente demo',
+            email: profile?.email || session.user.email,
+            whatsapp: profile?.whatsapp || '',
+            dni: profile?.dni || ''
+          },
+          items: cartItems
+        });
+        if (data.products && data.categories) applyCatalogData(data);
+        if (data.orders) setOrders(data.orders);
+        setCartItems([]);
+        setCompletedOrder(data.order);
+        setIsSubmittingOrder(false);
+        setCurrentView('order-success');
+        return;
+      } catch (error) {
+        setIsSubmittingOrder(false);
+        setCheckoutMessage(`No se pudo finalizar el pedido en Turso: ${error.message}`);
+        return;
+      }
+    }
+
     const total = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
     const nextOrder = {
       id: String(Date.now()).slice(-6),
@@ -870,6 +1051,16 @@ function App() {
 
   const markOrderDelivered = async (orderId) => {
     setOrdersStatus('');
+
+    if (isApiConnected) {
+      const data = await api.updateOrder(orderId, {
+        status: 'entregado',
+        paymentStatus: 'confirmado'
+      });
+      setOrders(data.orders || []);
+      return;
+    }
+
     setOrders((currentOrders) =>
       currentOrders.map((order) =>
         order.id === orderId ? { ...order, status: 'entregado', paymentStatus: 'confirmado' } : order
@@ -879,6 +1070,15 @@ function App() {
 
   const confirmOrderPaymentReceived = async (orderId) => {
     setOrdersStatus('');
+
+    if (isApiConnected) {
+      const data = await api.updateOrder(orderId, {
+        paymentStatus: 'comprobante_recibido'
+      });
+      setOrders(data.orders || []);
+      return;
+    }
+
     setOrders((currentOrders) =>
       currentOrders.map((order) =>
         order.id === orderId ? { ...order, paymentStatus: 'comprobante_recibido' } : order
@@ -897,6 +1097,19 @@ function App() {
     });
 
     if (!confirmed) return;
+
+    if (isApiConnected) {
+      try {
+        const data = await api.updateOrder(orderId, { status: 'cancelado' });
+        setOrders(data.orders || []);
+        await refreshCatalog();
+        setOrdersStatus(`Pedido #${orderId} cancelado en Turso.`);
+        return;
+      } catch (error) {
+        setOrdersStatus(`No se pudo cancelar en Turso: ${error.message}`);
+        return;
+      }
+    }
 
     setOrders((currentOrders) =>
       currentOrders.map((order) =>
@@ -936,12 +1149,18 @@ function App() {
   const loadAdminOrders = async () => {
     setIsLoadingOrders(true);
     setOrdersStatus('');
+    if (isApiConnected) {
+      await refreshOrders().catch((error) => setOrdersStatus(error.message));
+    }
     setIsLoadingOrders(false);
   };
 
   const loadUserOrders = async () => {
     setIsLoadingOrders(true);
     setOrdersStatus('');
+    if (isApiConnected) {
+      await refreshOrders().catch((error) => setOrdersStatus(error.message));
+    }
     setIsLoadingOrders(false);
   };
 
