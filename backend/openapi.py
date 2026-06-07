@@ -447,7 +447,7 @@ SWAGGER_HTML = """<!doctype html>
     <script src="https://unpkg.com/swagger-ui-dist@5/swagger-ui-bundle.js"></script>
     <script>
       window.ui = SwaggerUIBundle({
-        url: "/api/openapi.json",
+        url: "./openapi.json",
         dom_id: "#swagger-ui",
         deepLinking: true,
         presets: [SwaggerUIBundle.presets.apis],
