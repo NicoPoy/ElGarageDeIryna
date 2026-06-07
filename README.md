@@ -1,17 +1,24 @@
 # El Garage de Iryna
 
-Tienda online hecha con React, Vite y Turso/libSQL. Si Turso no esta configurado, la app conserva un fallback local para desarrollo.
+Tienda online hecha con React, Vite, API Python y Turso/libSQL. Si Turso no esta configurado, la app conserva un fallback local para desarrollo.
 
 ## Requisitos
 
 - Node.js 18 o superior
 - npm
+- Python soportado por Vercel
 - Cuenta de Turso
 
 ## Instalacion
 
 ```bash
 npm install
+```
+
+Las dependencias Python estan en:
+
+```text
+requirements.txt
 ```
 
 ## Variables de entorno
@@ -38,7 +45,7 @@ Admin:
 
 ```text
 Email: admin@elgaragedeiryna.com
-Contrasena: Admin123
+Contrasena: IrynaBaez2023
 ```
 
 Usuario:
@@ -61,6 +68,19 @@ http://localhost:5173
 ```
 
 Para probar tambien los endpoints `/api` en local, usar Vercel Dev o desplegar en Vercel con `TURSO_DATABASE_URL` y `TURSO_AUTH_TOKEN`.
+
+## Arquitectura
+
+```text
+api/                  Handler Python para Vercel
+backend/core/         Configuracion, errores HTTP y seguridad
+backend/db/           Cliente Turso/libSQL
+backend/repositories/ Acceso a datos
+backend/services/     Reglas de negocio
+backend/schemas/      Mapeos de datos hacia el frontend
+db/                   SQL de esquema Turso
+src/                  Frontend React
+```
 
 ## Build
 

@@ -1,6 +1,6 @@
 # Deploy
 
-El proyecto esta preparado para Vercel como app Vite con endpoints `/api` para Turso/libSQL.
+El proyecto esta preparado para Vercel como app Vite con endpoints Python `/api` para Turso/libSQL.
 
 ## Configuracion
 

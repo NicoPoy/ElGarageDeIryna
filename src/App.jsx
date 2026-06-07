@@ -406,7 +406,7 @@ function App() {
       refreshOrders().catch(() => {});
       return;
     } catch (error) {
-      if (isApiConnected) throw error;
+      if (error.code !== 'API_UNAVAILABLE') throw error;
     }
 
     const user = users.find(

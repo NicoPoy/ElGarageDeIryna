@@ -11,13 +11,17 @@ const request = async (path, options = {}) => {
   const contentType = response.headers.get('content-type') || '';
 
   if (!contentType.includes('application/json')) {
-    throw new Error('API no disponible.');
+    const error = new Error('API no disponible.');
+    error.code = 'API_UNAVAILABLE';
+    throw error;
   }
 
   const data = await response.json().catch(() => ({}));
 
   if (!response.ok) {
-    throw new Error(data.message || 'No se pudo completar la operacion.');
+    const error = new Error(data.message || 'No se pudo completar la operacion.');
+    error.code = data.code || 'API_ERROR';
+    throw error;
   }
 
   return data;

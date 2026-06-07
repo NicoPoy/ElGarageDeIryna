@@ -118,7 +118,7 @@ export const MOCK_USERS = [
   {
     id: 'admin-local',
     email: 'admin@elgaragedeiryna.com',
-    password: 'Admin123',
+    password: 'IrynaBaez2023',
     nombre: 'Iryna Admin',
     whatsapp: '+5493754419227',
     dni: '30000000',
