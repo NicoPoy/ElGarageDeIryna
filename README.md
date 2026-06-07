@@ -69,6 +69,20 @@ http://localhost:5173
 
 Para probar tambien los endpoints `/api` en local, usar Vercel Dev o desplegar en Vercel con `TURSO_DATABASE_URL` y `TURSO_AUTH_TOKEN`.
 
+## Swagger
+
+Una vez desplegado en Vercel, la documentacion interactiva queda disponible en:
+
+```text
+https://TU-DOMINIO.vercel.app/api/docs
+```
+
+El contrato OpenAPI JSON queda en:
+
+```text
+https://TU-DOMINIO.vercel.app/api/openapi.json
+```
+
 ## Arquitectura
 
 ```text

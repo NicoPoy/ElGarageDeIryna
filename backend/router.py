@@ -1,4 +1,5 @@
-from backend.core.http import ApiError, response
+from backend.core.http import ApiError, html_response, response
+from backend.openapi import OPENAPI_SCHEMA, SWAGGER_HTML
 from backend.services import auth_service, catalog_service, order_service
 
 
@@ -7,6 +8,12 @@ def route(method, path, body):
 
     if method == "GET" and parts == ["health"]:
         return response(200, {"ok": True})
+
+    if method == "GET" and parts == ["docs"]:
+        return html_response(200, SWAGGER_HTML)
+
+    if method == "GET" and parts == ["openapi.json"]:
+        return response(200, OPENAPI_SCHEMA)
 
     if method == "GET" and parts == ["catalog"]:
         return response(200, catalog_service.get_catalog())

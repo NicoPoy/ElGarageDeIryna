@@ -13,6 +13,10 @@ def response(status_code, data):
     return status_code, {"Content-Type": "application/json; charset=utf-8"}, json.dumps(data)
 
 
+def html_response(status_code, html):
+    return status_code, {"Content-Type": "text/html; charset=utf-8"}, html
+
+
 def parse_json_body(handler):
     content_length = int(handler.headers.get("content-length") or 0)
     if content_length <= 0:
