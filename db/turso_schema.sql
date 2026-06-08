@@ -125,12 +125,4 @@ END;
 
 INSERT OR IGNORE INTO users (id, email, password_hash, name, whatsapp, dni, role)
 VALUES
-  ('admin-local', 'admin@elgaragedeiryna.com', 'dc8dff8cc3f909bb676a8892ed1880e9:21305d4f92aa0b357eb4edfa46bd15fbd4e5e54f3f559f329620d92e0a5a4246', 'Iryna Admin', '+5493754419227', '30000000', 'admin'),
-  ('cliente-local', 'cliente@elgaragedeiryna.com', 'deaf5a9d7f302d75ed91201c04b49878:fb526a42a2e5775106d2ff433259800611e307396a509bf83eb73b949a322d9e', 'Cliente Demo', '+5493754000001', '40123456', 'cliente');
-
-INSERT OR IGNORE INTO categories (id, name, active)
-VALUES
-  ('aromas', 'Aromas', 1),
-  ('limpieza-hogar', 'Limpieza del hogar', 1),
-  ('jaboneria', 'Jabones', 1),
-  ('papeleria', 'Papeleria creativa', 1);
+  ('admin-local', 'admin@elgaragedeiryna.com', 'dc8dff8cc3f909bb676a8892ed1880e9:21305d4f92aa0b357eb4edfa46bd15fbd4e5e54f3f559f329620d92e0a5a4246', 'Iryna Admin', '+5493754419227', '30000000', 'admin');

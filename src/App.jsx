@@ -198,6 +198,7 @@ function App() {
   const [editingProduct, setEditingProduct] = useState(null);
   const [ordersStatus, setOrdersStatus] = useState('');
   const [isLoadingOrders, setIsLoadingOrders] = useState(false);
+  const [, setIsApiConnected] = useState(true);
   const [confirmDialog, setConfirmDialog] = useState(null);
   const confirmResolver = useRef(null);
 
@@ -239,6 +240,7 @@ function App() {
   };
 
   useEffect(() => saveStoredCartItems(cartItems), [cartItems]);
+
   useEffect(() => {
     const reconciledCart = reconcileCartWithProducts(catalogProducts, cartItems);
 
@@ -258,6 +260,7 @@ function App() {
 
   useEffect(() => {
     refreshCatalog().catch(() => {
+      setIsApiConnected(false);
       setProductsStatus('No se pudo conectar con Turso. Revisa que la API este levantada y que el archivo .env tenga las credenciales.');
     });
   }, []);
@@ -352,11 +355,19 @@ function App() {
 
   const handleLogin = async ({ email, password }) => {
     const normalizedEmail = email.trim().toLowerCase();
-    const data = await api.login({ email: normalizedEmail, password });
-    setSession(buildSession(data.user));
-    setProfile(data.user);
-    setUserRoles(data.user.roles || []);
-    refreshOrders().catch(() => {});
+
+    try {
+      const data = await api.login({ email: normalizedEmail, password });
+      setIsApiConnected(true);
+      setSession(buildSession(data.user));
+      setProfile(data.user);
+      setUserRoles(data.user.roles || []);
+      refreshOrders().catch(() => {});
+      return;
+    } catch (error) {
+      setIsApiConnected(false);
+      throw error;
+    }
   };
 
   const handleRegister = async (form) => {
@@ -368,15 +379,23 @@ function App() {
     if (dniDigits.length < 7 || dniDigits.length > 8) {
       throw new Error('El DNI tiene que tener 7 u 8 numeros.');
     }
-    const data = await api.register({
-      ...form,
-      email: normalizedEmail,
-      whatsapp: normalizedWhatsApp.value,
-      dni: dniDigits
-    });
-    setSession(buildSession(data.user));
-    setProfile(data.user);
-    setUserRoles(data.user.roles || []);
+
+    try {
+      const data = await api.register({
+        ...form,
+        email: normalizedEmail,
+        whatsapp: normalizedWhatsApp.value,
+        dni: dniDigits
+      });
+      setIsApiConnected(true);
+      setSession(buildSession(data.user));
+      setProfile(data.user);
+      setUserRoles(data.user.roles || []);
+      return;
+    } catch (error) {
+      setIsApiConnected(false);
+      throw error;
+    }
   };
 
   const handleLogout = () => {
@@ -445,10 +464,12 @@ function App() {
         imageUrls: [],
         variants
       });
+      setIsApiConnected(true);
       applyCatalogData(data);
       setAdminMessage('Producto cargado correctamente en Turso.');
       return true;
     } catch (error) {
+      setIsApiConnected(false);
       setAdminMessage(`No se pudo guardar en Turso: ${error.message}`);
       return false;
     }
@@ -497,14 +518,16 @@ function App() {
           ? product.currentImageUrls
           : product.currentImageUrl
             ? [product.currentImageUrl]
-            : [],
+          : [],
         variants
       });
+      setIsApiConnected(true);
       applyCatalogData(data);
       setEditingProduct(null);
       setAdminMessage('Producto modificado correctamente en Turso.');
       return true;
     } catch (error) {
+      setIsApiConnected(false);
       setAdminMessage(`No se pudo modificar en Turso: ${error.message}`);
       return false;
     }
@@ -529,9 +552,11 @@ function App() {
 
     try {
       const data = await api.deleteProduct(product.id);
+      setIsApiConnected(true);
       applyCatalogData(data);
       setAdminMessage('Producto eliminado correctamente en Turso.');
     } catch (error) {
+      setIsApiConnected(false);
       setAdminMessage(`No se pudo eliminar en Turso: ${error.message}`);
     }
   };
@@ -559,10 +584,12 @@ function App() {
 
     try {
       const data = await api.createCategory({ name: cleanName });
+      setIsApiConnected(true);
       applyCatalogData(data);
       setAdminMessage('Categoria creada correctamente en Turso.');
       return true;
     } catch (error) {
+      setIsApiConnected(false);
       setAdminMessage(`No se pudo crear la categoria en Turso: ${error.message}`);
       return false;
     }
@@ -594,11 +621,13 @@ function App() {
 
     try {
       const data = await api.updateCategory(category.id, { name: cleanName });
+      setIsApiConnected(true);
       applyCatalogData(data);
       if (activeCategory === category.name) setActiveCategory(cleanName);
       setAdminMessage('Categoria modificada correctamente en Turso.');
       return true;
     } catch (error) {
+      setIsApiConnected(false);
       setAdminMessage(`No se pudo modificar la categoria en Turso: ${error.message}`);
       return false;
     }
@@ -618,12 +647,14 @@ function App() {
 
     try {
       const data = await api.toggleCategory(category.id, { active: nextActive });
+      setIsApiConnected(true);
       applyCatalogData(data);
       if (!nextActive && activeCategory === category.name) setActiveCategory('Todos');
       setAdminMessage(
         nextActive ? 'Categoria activada correctamente en Turso.' : 'Categoria desactivada correctamente en Turso.'
       );
     } catch (error) {
+      setIsApiConnected(false);
       setAdminMessage(`No se pudo modificar la categoria en Turso: ${error.message}`);
     }
   };
@@ -774,13 +805,14 @@ function App() {
         userId: session.user.id,
         paymentMethod,
         customer: {
-          name: profile?.nombre || 'Cliente demo',
+          name: profile?.nombre || session.user.email,
           email: profile?.email || session.user.email,
           whatsapp: profile?.whatsapp || '',
           dni: profile?.dni || ''
         },
         items: cartItems
       });
+      setIsApiConnected(true);
       if (data.products && data.categories) applyCatalogData(data);
       if (data.orders) setOrders(data.orders);
       setCartItems([]);
@@ -788,6 +820,7 @@ function App() {
       setIsSubmittingOrder(false);
       setCurrentView('order-success');
     } catch (error) {
+      setIsApiConnected(false);
       setIsSubmittingOrder(false);
       setCheckoutMessage(`No se pudo finalizar el pedido en Turso: ${error.message}`);
     }
@@ -796,20 +829,32 @@ function App() {
   const markOrderDelivered = async (orderId) => {
     setOrdersStatus('');
 
-    const data = await api.updateOrder(orderId, {
-      status: 'entregado',
-      paymentStatus: 'confirmado'
-    });
-    setOrders(data.orders || []);
+    try {
+      const data = await api.updateOrder(orderId, {
+        status: 'entregado',
+        paymentStatus: 'confirmado'
+      });
+      setIsApiConnected(true);
+      setOrders(data.orders || []);
+    } catch (error) {
+      setIsApiConnected(false);
+      setOrdersStatus(`No se pudo actualizar el pedido en Turso: ${error.message}`);
+    }
   };
 
   const confirmOrderPaymentReceived = async (orderId) => {
     setOrdersStatus('');
 
-    const data = await api.updateOrder(orderId, {
-      paymentStatus: 'comprobante_recibido'
-    });
-    setOrders(data.orders || []);
+    try {
+      const data = await api.updateOrder(orderId, {
+        paymentStatus: 'comprobante_recibido'
+      });
+      setIsApiConnected(true);
+      setOrders(data.orders || []);
+    } catch (error) {
+      setIsApiConnected(false);
+      setOrdersStatus(`No se pudo actualizar el pago en Turso: ${error.message}`);
+    }
   };
 
   const cancelOrder = async (orderId) => {
@@ -825,10 +870,12 @@ function App() {
 
     try {
       const data = await api.updateOrder(orderId, { status: 'cancelado' });
+      setIsApiConnected(true);
       setOrders(data.orders || []);
       await refreshCatalog();
       setOrdersStatus(`Pedido #${orderId} cancelado en Turso.`);
     } catch (error) {
+      setIsApiConnected(false);
       setOrdersStatus(`No se pudo cancelar en Turso: ${error.message}`);
     }
   };

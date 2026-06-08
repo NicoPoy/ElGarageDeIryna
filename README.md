@@ -1,6 +1,6 @@
 # El Garage de Iryna
 
-Tienda online hecha con React, Vite, API Python y Turso/libSQL. Si Turso no esta configurado, la app conserva un fallback local para desarrollo.
+Tienda online hecha con React, Vite, API Python y Turso/libSQL.
 
 ## Requisitos
 
@@ -37,22 +37,21 @@ Crear la base en Turso y ejecutar:
 turso db shell NOMBRE_DE_TU_DB < db/turso_schema.sql
 ```
 
-Ese SQL crea tablas, indices, triggers, categorias base y usuarios de prueba. No carga productos.
+Ese SQL crea tablas, indices, triggers y el usuario administrador. No carga productos, categorias ni usuarios cliente.
 
-## Usuarios de prueba
+Para limpiar una base que ya tenia datos de prueba y conservar solo el admin:
+
+```bash
+turso db shell NOMBRE_DE_TU_DB < db/cleanup_keep_admin.sql
+```
+
+## Usuario administrador
 
 Admin:
 
 ```text
 Email: admin@elgaragedeiryna.com
 Contrasena: IrynaBaez2023
-```
-
-Usuario:
-
-```text
-Email: cliente@elgaragedeiryna.com
-Contrasena: Cliente123
 ```
 
 ## Desarrollo
