@@ -4,7 +4,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "node scripts/dev-full.mjs",
+    "dev:front": "vite",
+    "dev:api": "E:\\DESARROLLO\\Herramientas\\Python\\python.exe -m backend.local_server",
     "build": "node node_modules/vite/bin/vite.js build",
     "preview": "vite preview",
     "android:add": "cap add android",

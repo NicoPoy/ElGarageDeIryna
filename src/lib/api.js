@@ -11,8 +11,8 @@ const request = async (path, options = {}) => {
   const contentType = response.headers.get('content-type') || '';
 
   if (!contentType.includes('application/json')) {
-    const error = new Error('API no disponible.');
-    error.code = 'API_UNAVAILABLE';
+    const error = new Error('La API no respondio con datos validos.');
+    error.code = 'API_ERROR';
     throw error;
   }
 

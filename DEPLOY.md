@@ -17,6 +17,28 @@ TURSO_AUTH_TOKEN=tu_token_de_turso
 VITE_MERCADO_PAGO_PAYMENT_LINK=https://link.mercadopago.com.ar/tu-link-de-pago
 ```
 
+Sin `TURSO_DATABASE_URL` y `TURSO_AUTH_TOKEN`, la API responde error de configuracion y el frontend no usa datos locales.
+
+## API y Swagger
+
+Una vez publicado, la API queda bajo:
+
+```text
+https://TU-DOMINIO.vercel.app/api
+```
+
+Swagger:
+
+```text
+https://TU-DOMINIO.vercel.app/api/docs
+```
+
+OpenAPI JSON:
+
+```text
+https://TU-DOMINIO.vercel.app/api/openapi.json
+```
+
 ## Base de datos
 
 Antes del deploy, ejecutar:

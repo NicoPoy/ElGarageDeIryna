@@ -13,40 +13,13 @@ import ProductCatalog from './components/ProductCatalog';
 import SiteFooter from './components/SiteFooter';
 import Toolbar from './components/Toolbar';
 import TopActions from './components/TopActions';
-import {
-  DEFAULT_CATEGORIES,
-  DEFAULT_PRODUCT_IMAGE,
-  INITIAL_PRODUCTS,
-  MOCK_USERS
-} from './data/products';
+import { DEFAULT_PRODUCT_IMAGE } from './data/products';
 import { api } from './lib/api';
 import { downloadCsv } from './utils/csv';
 import { normalizeBuenosAiresWhatsApp } from './utils/contact';
 
 const CART_STORAGE_KEY = 'el-garage-iryna-cart';
 const CART_STORAGE_TTL_MS = 15 * 60 * 1000;
-const USERS_STORAGE_KEY = 'el-garage-iryna-users';
-const PRODUCTS_STORAGE_KEY = 'el-garage-iryna-products';
-const CATEGORIES_STORAGE_KEY = 'el-garage-iryna-categories';
-const ORDERS_STORAGE_KEY = 'el-garage-iryna-orders';
-
-const clone = (value) => JSON.parse(JSON.stringify(value));
-
-const readStoredValue = (key, fallback) => {
-  if (typeof window === 'undefined') return clone(fallback);
-
-  try {
-    const value = JSON.parse(window.localStorage.getItem(key) || 'null');
-    return value || clone(fallback);
-  } catch {
-    return clone(fallback);
-  }
-};
-
-const writeStoredValue = (key, value) => {
-  if (typeof window === 'undefined') return;
-  window.localStorage.setItem(key, JSON.stringify(value));
-};
 
 const clearStoredCart = () => {
   if (typeof window === 'undefined') return;
@@ -172,11 +145,6 @@ const reconcileCartWithProducts = (products, cartItems) => {
   return { cartItems: nextCartItems, changed, products: nextProducts };
 };
 
-const createLocalImageUrls = (files = []) =>
-  Array.from(files)
-    .filter(Boolean)
-    .map((file) => URL.createObjectURL(file));
-
 const buildVariants = ({ productId, stock, variants = [], varieties = [] }) => {
   if (variants.length) {
     return variants.map((variant, index) => ({
@@ -206,14 +174,9 @@ const buildSession = (user) => ({
 });
 
 function App() {
-  const [catalogProducts, setCatalogProducts] = useState(() =>
-    readStoredValue(PRODUCTS_STORAGE_KEY, INITIAL_PRODUCTS)
-  );
-  const [catalogCategories, setCatalogCategories] = useState(() =>
-    readStoredValue(CATEGORIES_STORAGE_KEY, DEFAULT_CATEGORIES)
-  );
-  const [users, setUsers] = useState(() => readStoredValue(USERS_STORAGE_KEY, MOCK_USERS));
-  const [orders, setOrders] = useState(() => readStoredValue(ORDERS_STORAGE_KEY, []));
+  const [catalogProducts, setCatalogProducts] = useState([]);
+  const [catalogCategories, setCatalogCategories] = useState([]);
+  const [orders, setOrders] = useState([]);
   const [activeCategory, setActiveCategory] = useState('Todos');
   const [query, setQuery] = useState('');
   const [sortOrder, setSortOrder] = useState('name-asc');
@@ -235,7 +198,6 @@ function App() {
   const [editingProduct, setEditingProduct] = useState(null);
   const [ordersStatus, setOrdersStatus] = useState('');
   const [isLoadingOrders, setIsLoadingOrders] = useState(false);
-  const [isApiConnected, setIsApiConnected] = useState(false);
   const [confirmDialog, setConfirmDialog] = useState(null);
   const confirmResolver = useRef(null);
 
@@ -277,11 +239,6 @@ function App() {
   };
 
   useEffect(() => saveStoredCartItems(cartItems), [cartItems]);
-  useEffect(() => writeStoredValue(PRODUCTS_STORAGE_KEY, catalogProducts), [catalogProducts]);
-  useEffect(() => writeStoredValue(CATEGORIES_STORAGE_KEY, catalogCategories), [catalogCategories]);
-  useEffect(() => writeStoredValue(USERS_STORAGE_KEY, users), [users]);
-  useEffect(() => writeStoredValue(ORDERS_STORAGE_KEY, orders), [orders]);
-
   useEffect(() => {
     const reconciledCart = reconcileCartWithProducts(catalogProducts, cartItems);
 
@@ -301,8 +258,7 @@ function App() {
 
   useEffect(() => {
     refreshCatalog().catch(() => {
-      setIsApiConnected(false);
-      setProductsStatus('Usando datos locales hasta configurar Turso.');
+      setProductsStatus('No se pudo conectar con Turso. Revisa que la API este levantada y que el archivo .env tenga las credenciales.');
     });
   }, []);
 
@@ -396,31 +352,11 @@ function App() {
 
   const handleLogin = async ({ email, password }) => {
     const normalizedEmail = email.trim().toLowerCase();
-
-    try {
-      const data = await api.login({ email: normalizedEmail, password });
-      setIsApiConnected(true);
-      setSession(buildSession(data.user));
-      setProfile(data.user);
-      setUserRoles(data.user.roles || []);
-      refreshOrders().catch(() => {});
-      return;
-    } catch (error) {
-      if (error.code !== 'API_UNAVAILABLE') throw error;
-    }
-
-    const user = users.find(
-      (currentUser) =>
-        currentUser.email.toLowerCase() === normalizedEmail && currentUser.password === password
-    );
-
-    if (!user) {
-      throw new Error('Email o contrasena incorrectos.');
-    }
-
-    setSession(buildSession(user));
-    setProfile(user);
-    setUserRoles(user.roles || []);
+    const data = await api.login({ email: normalizedEmail, password });
+    setSession(buildSession(data.user));
+    setProfile(data.user);
+    setUserRoles(data.user.roles || []);
+    refreshOrders().catch(() => {});
   };
 
   const handleRegister = async (form) => {
@@ -432,40 +368,15 @@ function App() {
     if (dniDigits.length < 7 || dniDigits.length > 8) {
       throw new Error('El DNI tiene que tener 7 u 8 numeros.');
     }
-    if (users.some((user) => user.email.toLowerCase() === normalizedEmail)) {
-      throw new Error('Ese email ya esta registrado. Inicia sesion o usa otro correo.');
-    }
-
-    try {
-      const data = await api.register({
-        ...form,
-        email: normalizedEmail,
-        whatsapp: normalizedWhatsApp.value,
-        dni: dniDigits
-      });
-      setIsApiConnected(true);
-      setSession(buildSession(data.user));
-      setProfile(data.user);
-      setUserRoles(data.user.roles || []);
-      return;
-    } catch (error) {
-      if (isApiConnected) throw error;
-    }
-
-    const nextUser = {
-      id: `cliente-${crypto.randomUUID()}`,
+    const data = await api.register({
+      ...form,
       email: normalizedEmail,
-      password: form.password,
-      nombre: form.nombre.trim(),
       whatsapp: normalizedWhatsApp.value,
-      dni: dniDigits,
-      roles: ['cliente']
-    };
-
-    setUsers((currentUsers) => [...currentUsers, nextUser]);
-    setSession(buildSession(nextUser));
-    setProfile(nextUser);
-    setUserRoles(nextUser.roles);
+      dni: dniDigits
+    });
+    setSession(buildSession(data.user));
+    setProfile(data.user);
+    setUserRoles(data.user.roles || []);
   };
 
   const handleLogout = () => {
@@ -525,50 +436,22 @@ function App() {
 
     if (!confirmed) return false;
 
-    if (isApiConnected) {
-      try {
-        const data = await api.createProduct({
-          name: product.name.trim(),
-          categoryId: selectedCategory.id,
-          price: Number(product.price),
-          stock: Number(product.stock || 0),
-          imageUrls: [],
-          variants
-        });
-        applyCatalogData(data);
-        setAdminMessage('Producto cargado correctamente en Turso.');
-        return true;
-      } catch (error) {
-        setAdminMessage(`No se pudo guardar en Turso: ${error.message}`);
-        return false;
-      }
+    try {
+      const data = await api.createProduct({
+        name: product.name.trim(),
+        categoryId: selectedCategory.id,
+        price: Number(product.price),
+        stock: Number(product.stock || 0),
+        imageUrls: [],
+        variants
+      });
+      applyCatalogData(data);
+      setAdminMessage('Producto cargado correctamente en Turso.');
+      return true;
+    } catch (error) {
+      setAdminMessage(`No se pudo guardar en Turso: ${error.message}`);
+      return false;
     }
-
-    const imageUrls = createLocalImageUrls(product.photoFiles);
-    const images = imageUrls.length ? imageUrls : [DEFAULT_PRODUCT_IMAGE];
-    const nextProduct = {
-      id: productId,
-      name: product.name.trim(),
-      category: selectedCategory.name,
-      categoryId: selectedCategory.id,
-      price: Number(product.price),
-      stock: Number(product.stock || 0),
-      availableStock: variants.length ? variantStockTotal : Number(product.stock || 0),
-      image: images[0],
-      images,
-      imagePath: null,
-      varieties: variants.length ? variants.map((variant) => variant.name).filter(Boolean) : varieties,
-      variants,
-      active: true
-    };
-
-    setCatalogProducts((currentProducts) =>
-      [...currentProducts, nextProduct].sort((a, b) =>
-        `${a.category} ${a.name}`.localeCompare(`${b.category} ${b.name}`)
-      )
-    );
-    setAdminMessage('Producto cargado correctamente.');
-    return true;
   };
 
   const updateProduct = async (product) => {
@@ -604,63 +487,27 @@ function App() {
 
     if (!confirmed) return false;
 
-    if (isApiConnected) {
-      try {
-        const data = await api.updateProduct(product.id, {
-          name: product.name.trim(),
-          categoryId: selectedCategory.id,
-          price: Number(product.price),
-          stock: Number(product.stock || 0),
-          imageUrls: product.currentImageUrls?.length
-            ? product.currentImageUrls
-            : product.currentImageUrl
-              ? [product.currentImageUrl]
-              : [],
-          variants
-        });
-        applyCatalogData(data);
-        setEditingProduct(null);
-        setAdminMessage('Producto modificado correctamente en Turso.');
-        return true;
-      } catch (error) {
-        setAdminMessage(`No se pudo modificar en Turso: ${error.message}`);
-        return false;
-      }
+    try {
+      const data = await api.updateProduct(product.id, {
+        name: product.name.trim(),
+        categoryId: selectedCategory.id,
+        price: Number(product.price),
+        stock: Number(product.stock || 0),
+        imageUrls: product.currentImageUrls?.length
+          ? product.currentImageUrls
+          : product.currentImageUrl
+            ? [product.currentImageUrl]
+            : [],
+        variants
+      });
+      applyCatalogData(data);
+      setEditingProduct(null);
+      setAdminMessage('Producto modificado correctamente en Turso.');
+      return true;
+    } catch (error) {
+      setAdminMessage(`No se pudo modificar en Turso: ${error.message}`);
+      return false;
     }
-
-    const uploadedImages = createLocalImageUrls(product.photoFiles);
-    const preservedImages = product.currentImageUrls?.length
-      ? product.currentImageUrls
-      : product.currentImageUrl
-        ? [product.currentImageUrl]
-        : [];
-    const images = [...preservedImages, ...uploadedImages].filter(Boolean);
-    const finalImages = images.length ? images : [DEFAULT_PRODUCT_IMAGE];
-
-    setCatalogProducts((currentProducts) =>
-      currentProducts
-        .map((currentProduct) =>
-          currentProduct.id === product.id
-            ? {
-                ...currentProduct,
-                name: product.name.trim(),
-                category: selectedCategory.name,
-                categoryId: selectedCategory.id,
-                price: Number(product.price),
-                stock: Number(product.stock || 0),
-                availableStock: variants.length ? variantStockTotal : Number(product.stock || 0),
-                image: finalImages[0],
-                images: finalImages,
-                varieties: variants.length ? variants.map((variant) => variant.name).filter(Boolean) : varieties,
-                variants
-              }
-            : currentProduct
-        )
-        .sort((a, b) => `${a.category} ${a.name}`.localeCompare(`${b.category} ${b.name}`))
-    );
-    setEditingProduct(null);
-    setAdminMessage('Producto modificado correctamente.');
-    return true;
   };
 
   const editProduct = (product) => {
@@ -680,22 +527,13 @@ function App() {
 
     if (!confirmed) return;
 
-    if (isApiConnected) {
-      try {
-        const data = await api.deleteProduct(product.id);
-        applyCatalogData(data);
-        setAdminMessage('Producto eliminado correctamente en Turso.');
-        return;
-      } catch (error) {
-        setAdminMessage(`No se pudo eliminar en Turso: ${error.message}`);
-        return;
-      }
+    try {
+      const data = await api.deleteProduct(product.id);
+      applyCatalogData(data);
+      setAdminMessage('Producto eliminado correctamente en Turso.');
+    } catch (error) {
+      setAdminMessage(`No se pudo eliminar en Turso: ${error.message}`);
     }
-
-    setCatalogProducts((currentProducts) =>
-      currentProducts.filter((currentProduct) => currentProduct.id !== product.id)
-    );
-    setAdminMessage('Producto eliminado correctamente.');
   };
 
   const createCategory = async (name) => {
@@ -719,30 +557,15 @@ function App() {
 
     if (!confirmed) return false;
 
-    if (isApiConnected) {
-      try {
-        const data = await api.createCategory({ name: cleanName });
-        applyCatalogData(data);
-        setAdminMessage('Categoria creada correctamente en Turso.');
-        return true;
-      } catch (error) {
-        setAdminMessage(`No se pudo crear la categoria en Turso: ${error.message}`);
-        return false;
-      }
+    try {
+      const data = await api.createCategory({ name: cleanName });
+      applyCatalogData(data);
+      setAdminMessage('Categoria creada correctamente en Turso.');
+      return true;
+    } catch (error) {
+      setAdminMessage(`No se pudo crear la categoria en Turso: ${error.message}`);
+      return false;
     }
-
-    setCatalogCategories((currentCategories) =>
-      [
-        ...currentCategories,
-        {
-          id: `cat-${crypto.randomUUID()}`,
-          name: cleanName,
-          active: true
-        }
-      ].sort((a, b) => a.name.localeCompare(b.name))
-    );
-    setAdminMessage('Categoria creada correctamente.');
-    return true;
   };
 
   const renameCategory = async (category, name) => {
@@ -769,35 +592,16 @@ function App() {
 
     if (!confirmed) return false;
 
-    if (isApiConnected) {
-      try {
-        const data = await api.updateCategory(category.id, { name: cleanName });
-        applyCatalogData(data);
-        if (activeCategory === category.name) setActiveCategory(cleanName);
-        setAdminMessage('Categoria modificada correctamente en Turso.');
-        return true;
-      } catch (error) {
-        setAdminMessage(`No se pudo modificar la categoria en Turso: ${error.message}`);
-        return false;
-      }
+    try {
+      const data = await api.updateCategory(category.id, { name: cleanName });
+      applyCatalogData(data);
+      if (activeCategory === category.name) setActiveCategory(cleanName);
+      setAdminMessage('Categoria modificada correctamente en Turso.');
+      return true;
+    } catch (error) {
+      setAdminMessage(`No se pudo modificar la categoria en Turso: ${error.message}`);
+      return false;
     }
-
-    setCatalogCategories((currentCategories) =>
-      currentCategories
-        .map((currentCategory) =>
-          currentCategory.id === category.id ? { ...currentCategory, name: cleanName } : currentCategory
-        )
-        .sort((a, b) => a.name.localeCompare(b.name))
-    );
-    setCatalogProducts((currentProducts) =>
-      currentProducts.map((product) =>
-        product.categoryId === category.id ? { ...product, category: cleanName } : product
-      )
-    );
-
-    if (activeCategory === category.name) setActiveCategory(cleanName);
-    setAdminMessage('Categoria modificada correctamente.');
-    return true;
   };
 
   const toggleCategory = async (category) => {
@@ -812,31 +616,16 @@ function App() {
 
     if (!confirmed) return;
 
-    if (isApiConnected) {
-      try {
-        const data = await api.toggleCategory(category.id, { active: nextActive });
-        applyCatalogData(data);
-        if (!nextActive && activeCategory === category.name) setActiveCategory('Todos');
-        setAdminMessage(
-          nextActive ? 'Categoria activada correctamente en Turso.' : 'Categoria desactivada correctamente en Turso.'
-        );
-        return;
-      } catch (error) {
-        setAdminMessage(`No se pudo modificar la categoria en Turso: ${error.message}`);
-        return;
-      }
+    try {
+      const data = await api.toggleCategory(category.id, { active: nextActive });
+      applyCatalogData(data);
+      if (!nextActive && activeCategory === category.name) setActiveCategory('Todos');
+      setAdminMessage(
+        nextActive ? 'Categoria activada correctamente en Turso.' : 'Categoria desactivada correctamente en Turso.'
+      );
+    } catch (error) {
+      setAdminMessage(`No se pudo modificar la categoria en Turso: ${error.message}`);
     }
-
-    setCatalogCategories((currentCategories) =>
-      currentCategories.map((currentCategory) =>
-        currentCategory.id === category.id ? { ...currentCategory, active: nextActive } : currentCategory
-      )
-    );
-
-    if (!nextActive && activeCategory === category.name) setActiveCategory('Todos');
-    setAdminMessage(
-      nextActive ? 'Categoria activada correctamente.' : 'Categoria desactivada correctamente.'
-    );
   };
 
   const changeProductStock = (productId, delta, variantId = null) => {
@@ -980,115 +769,51 @@ function App() {
 
     setIsSubmittingOrder(true);
 
-    if (isApiConnected) {
-      try {
-        const data = await api.createOrder({
-          userId: session.user.id,
-          paymentMethod,
-          customer: {
-            name: profile?.nombre || 'Cliente demo',
-            email: profile?.email || session.user.email,
-            whatsapp: profile?.whatsapp || '',
-            dni: profile?.dni || ''
-          },
-          items: cartItems
-        });
-        if (data.products && data.categories) applyCatalogData(data);
-        if (data.orders) setOrders(data.orders);
-        setCartItems([]);
-        setCompletedOrder(data.order);
-        setIsSubmittingOrder(false);
-        setCurrentView('order-success');
-        return;
-      } catch (error) {
-        setIsSubmittingOrder(false);
-        setCheckoutMessage(`No se pudo finalizar el pedido en Turso: ${error.message}`);
-        return;
-      }
+    try {
+      const data = await api.createOrder({
+        userId: session.user.id,
+        paymentMethod,
+        customer: {
+          name: profile?.nombre || 'Cliente demo',
+          email: profile?.email || session.user.email,
+          whatsapp: profile?.whatsapp || '',
+          dni: profile?.dni || ''
+        },
+        items: cartItems
+      });
+      if (data.products && data.categories) applyCatalogData(data);
+      if (data.orders) setOrders(data.orders);
+      setCartItems([]);
+      setCompletedOrder(data.order);
+      setIsSubmittingOrder(false);
+      setCurrentView('order-success');
+    } catch (error) {
+      setIsSubmittingOrder(false);
+      setCheckoutMessage(`No se pudo finalizar el pedido en Turso: ${error.message}`);
     }
-
-    const total = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
-    const nextOrder = {
-      id: String(Date.now()).slice(-6),
-      userId: session.user.id,
-      date: new Date().toISOString(),
-      status: 'pendiente',
-      paymentMethod,
-      paymentStatus: paymentMethod === 'transferencia' ? 'pendiente_comprobante' : 'pendiente',
-      total,
-      customer: {
-        name: profile?.nombre || 'Cliente demo',
-        email: profile?.email || session.user.email,
-        whatsapp: profile?.whatsapp || '',
-        dni: profile?.dni || ''
-      },
-      items: cartItems.map((item) => ({
-        id: `${item.variantKey}-${Date.now()}`,
-        productId: item.id,
-        variantId: item.variantId,
-        quantity: item.quantity,
-        unitPrice: item.price,
-        subtotal: item.price * item.quantity,
-        variety: item.variety || '',
-        product: {
-          name: item.name,
-          category: catalogProducts.find((product) => product.id === item.id)?.category || 'Sin categoria',
-          image: item.image
-        }
-      }))
-    };
-
-    setOrders((currentOrders) => [nextOrder, ...currentOrders]);
-    setCartItems([]);
-    setCompletedOrder({
-      id: nextOrder.id,
-      total,
-      paymentMethod
-    });
-    setIsSubmittingOrder(false);
-    setCurrentView('order-success');
   };
 
   const markOrderDelivered = async (orderId) => {
     setOrdersStatus('');
 
-    if (isApiConnected) {
-      const data = await api.updateOrder(orderId, {
-        status: 'entregado',
-        paymentStatus: 'confirmado'
-      });
-      setOrders(data.orders || []);
-      return;
-    }
-
-    setOrders((currentOrders) =>
-      currentOrders.map((order) =>
-        order.id === orderId ? { ...order, status: 'entregado', paymentStatus: 'confirmado' } : order
-      )
-    );
+    const data = await api.updateOrder(orderId, {
+      status: 'entregado',
+      paymentStatus: 'confirmado'
+    });
+    setOrders(data.orders || []);
   };
 
   const confirmOrderPaymentReceived = async (orderId) => {
     setOrdersStatus('');
 
-    if (isApiConnected) {
-      const data = await api.updateOrder(orderId, {
-        paymentStatus: 'comprobante_recibido'
-      });
-      setOrders(data.orders || []);
-      return;
-    }
-
-    setOrders((currentOrders) =>
-      currentOrders.map((order) =>
-        order.id === orderId ? { ...order, paymentStatus: 'comprobante_recibido' } : order
-      )
-    );
+    const data = await api.updateOrder(orderId, {
+      paymentStatus: 'comprobante_recibido'
+    });
+    setOrders(data.orders || []);
   };
 
   const cancelOrder = async (orderId) => {
     setOrdersStatus('');
-    const orderToCancel = orders.find((order) => order.id === orderId);
     const confirmed = await requestConfirm({
       confirmLabel: 'Cancelar pedido',
       isDanger: true,
@@ -1098,69 +823,27 @@ function App() {
 
     if (!confirmed) return;
 
-    if (isApiConnected) {
-      try {
-        const data = await api.updateOrder(orderId, { status: 'cancelado' });
-        setOrders(data.orders || []);
-        await refreshCatalog();
-        setOrdersStatus(`Pedido #${orderId} cancelado en Turso.`);
-        return;
-      } catch (error) {
-        setOrdersStatus(`No se pudo cancelar en Turso: ${error.message}`);
-        return;
-      }
+    try {
+      const data = await api.updateOrder(orderId, { status: 'cancelado' });
+      setOrders(data.orders || []);
+      await refreshCatalog();
+      setOrdersStatus(`Pedido #${orderId} cancelado en Turso.`);
+    } catch (error) {
+      setOrdersStatus(`No se pudo cancelar en Turso: ${error.message}`);
     }
-
-    setOrders((currentOrders) =>
-      currentOrders.map((order) =>
-        order.id === orderId ? { ...order, status: 'cancelado' } : order
-      )
-    );
-
-    if (orderToCancel) {
-      setCatalogProducts((currentProducts) =>
-        currentProducts.map((product) => {
-          const restoredItems = orderToCancel.items.filter((item) => item.productId === product.id);
-          if (!restoredItems.length) return product;
-
-          const restoredStock = restoredItems.reduce((sum, item) => sum + item.quantity, 0);
-
-          return {
-            ...product,
-            stock: product.stock + restoredStock,
-            availableStock: (product.availableStock ?? product.stock) + restoredStock,
-            variants: product.variants.map((variant) => {
-              const restoredVariantStock = restoredItems
-                .filter((item) => item.variantId === variant.id)
-                .reduce((sum, item) => sum + item.quantity, 0);
-
-              return restoredVariantStock
-                ? { ...variant, stock: variant.stock + restoredVariantStock }
-                : variant;
-            })
-          };
-        })
-      );
-    }
-
-    setOrdersStatus(`Pedido #${orderId} cancelado. Stock devuelto correctamente.`);
   };
 
   const loadAdminOrders = async () => {
     setIsLoadingOrders(true);
     setOrdersStatus('');
-    if (isApiConnected) {
-      await refreshOrders().catch((error) => setOrdersStatus(error.message));
-    }
+    await refreshOrders().catch((error) => setOrdersStatus(error.message));
     setIsLoadingOrders(false);
   };
 
   const loadUserOrders = async () => {
     setIsLoadingOrders(true);
     setOrdersStatus('');
-    if (isApiConnected) {
-      await refreshOrders().catch((error) => setOrdersStatus(error.message));
-    }
+    await refreshOrders().catch((error) => setOrdersStatus(error.message));
     setIsLoadingOrders(false);
   };
 
